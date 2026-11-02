@@ -1,0 +1,26 @@
+# Dependencies (Folder modul node)
+node_modules/
+
+# Production / Hasil Build (Akan dibuat ulang saat deploy)
+dist/
+dist-ssr/
+*.local
+
+# Cache dan File Log dari npm/yarn/vite
+.eslintcache
+*.log
+.vite/
+
+# File Konfigurasi TypeScript Build Cache (Terlihat di gambar Anda ada file .tsbuildinfo)
+*.tsbuildinfo
+
+# File Environment / Kunci Rahasia (Jangan sampai bocor ke GitHub)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Sistem Operasi (File sampah otomatis dari Windows/Mac)
+.DS_Store
+Thumbs.db
