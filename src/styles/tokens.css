@@ -1,0 +1,225 @@
+:root {
+  /* colors are set per world from src/garden/worlds.ts; these match Dusk for first paint */
+  --plate: #1c1846;
+  --sky: #3b2463;
+  --horizon: #ff9f7c;
+  --text: #f3eeff;
+  --muted: #b9aedd;
+  --accent: #8fe3b0;
+  --accent-ink: #10302a;
+  --bug: #ff5470;
+  --firefly: #ffd36e;
+  --hill-near: #15103a;
+  --paper: #262058;
+  --paper-edge: #0f0b2c;
+  --untyped: 0.72;
+
+  --hairline: color-mix(in srgb, var(--text) 16%, transparent);
+  --wash: color-mix(in srgb, var(--text) 8%, transparent);
+
+  --font-display: 'Caprasimo', Georgia, serif;
+  --font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-code: 'Spline Sans Mono', 'JetBrains Mono', Consolas, monospace;
+
+  --gutter: clamp(16px, 5vw, 72px);
+  --paper-shadow: 5px 6px 0 var(--paper-edge);
+  --spring: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--plate);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.45;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+dl,
+dd {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.hidden-input:focus-visible,
+.sheet:focus-visible {
+  outline: none;
+}
+
+kbd {
+  font-family: var(--font-code);
+  font-size: 0.74em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--hairline);
+  background: var(--wash);
+  color: inherit;
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  box-shadow: 3px 4px 0 var(--paper-edge);
+  transition: translate 0.12s, box-shadow 0.12s;
+}
+
+.btn:hover {
+  translate: -1px -1px;
+  box-shadow: 4px 5px 0 var(--paper-edge);
+}
+
+.btn:active {
+  translate: 2px 3px;
+  box-shadow: 1px 1px 0 var(--paper-edge);
+}
+
+.btn.ghost-btn {
+  background: var(--wash);
+  color: var(--text);
+  box-shadow: none;
+  border: 1px solid var(--hairline);
+}
+
+.btn.danger {
+  background: var(--bug);
+  color: #fff;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--muted);
+}
+
+.icon-btn:hover {
+  background: var(--wash);
+  color: var(--text);
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--wash);
+}
+
+.segmented button {
+  padding: 5px 11px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.segmented button:hover {
+  color: var(--text);
+}
+
+.segmented button.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.lang-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  font-family: var(--font-code);
+  font-weight: 700;
+  line-height: 1;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--hairline);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+[data-scene='calm'] *,
+[data-scene='calm'] *::before,
+[data-scene='calm'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+}

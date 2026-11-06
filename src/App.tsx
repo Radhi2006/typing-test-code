@@ -1,68 +1,122 @@
-import React, { useState, useEffect } from 'react';
-import { ThemeProvider, useThemeContext } from './context/ThemeContext';
-import { GameProvider, useGameContext } from './context/GameContext';
-import { Header } from './components/layout/Header';
-import { ActivityBar } from './components/layout/ActivityBar';
-import { Sidebar } from './components/layout/Sidebar';
-import { TabBar } from './components/layout/TabBar';
-import { CodeEditor } from './components/editor/CodeEditor';
-import { ResultsModal } from './components/panels/ResultsModal';
-import { CommandPalette } from './components/panels/CommandPalette';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, MotionConfig } from 'motion/react';
+import { useEffect } from 'react';
+import { changeFontSize, closeOverlay } from './commands';
+import { CommandPalette } from './components/CommandPalette';
+import { Forest } from './components/overlays/Forest';
+import { Library } from './components/overlays/Library';
+import { SettingsSheet } from './components/overlays/SettingsSheet';
+import { ResultScreen } from './components/results/ResultScreen';
+import { Hud } from './components/stage/Hud';
+import { TopBar } from './components/stage/TopBar';
+import { TypingStage } from './components/stage/TypingStage';
+import { GardenCanvas } from './garden/GardenCanvas';
+import { WORLD_BY_ID, worldCssVars } from './garden/worlds';
+import { handleTypingKey, isEditableTarget } from './hooks/keys';
+import { useSettings } from './store/settings';
+import { useTest } from './store/test';
+import { useUI } from './store/ui';
 
-export default function App() {
-  return (
-    <ThemeProvider>
-      <GameProvider>
-        <AppContent />
-      </GameProvider>
-    </ThemeProvider>
+function useWorld() {
+  const id = useSettings((s) => s.world);
+  useEffect(() => {
+    const world = WORLD_BY_ID[id];
+    const root = document.documentElement;
+    for (const [k, v] of Object.entries(worldCssVars(world))) root.style.setProperty(k, v);
+    root.dataset.world = id;
+    root.style.colorScheme = world.kind;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', world.plate);
+  }, [id]);
+}
+
+function useTicker() {
+  const phase = useTest((s) => s.phase);
+  useEffect(() => {
+    if (phase !== 'running') return;
+    const id = window.setInterval(() => useTest.getState().tick(performance.now()), 100);
+    return () => window.clearInterval(id);
+  }, [phase]);
+}
+
+function useShortcuts() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const ui = useUI.getState();
+      const test = useTest.getState();
+      const ctrl = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+      let handled = true;
+
+      if ((ctrl && e.shiftKey && key === 'p') || e.key === 'F1') ui.openPalette('commands');
+      else if (ctrl && !e.shiftKey && key === 'p') ui.openPalette('files');
+      else if (ui.palette) handled = false; // palette handles its own keys
+      else if (e.key === 'Escape' && ui.overlay) closeOverlay();
+      else if (e.key === 'Escape') test.restart();
+      else if (ctrl && e.key === 'Enter') test.next();
+      else if (ctrl && key === 'b') ui.toggleOverlay('library');
+      else if (ctrl && key === 'j') ui.toggleOverlay('forest');
+      else if (ctrl && key === ',') ui.toggleOverlay('settings');
+      else if (ctrl && (e.key === '=' || e.key === '+')) changeFontSize(1);
+      else if (ctrl && e.key === '-') changeFontSize(-1);
+      else handled = false;
+
+      if (handled) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      // typing from anywhere outside a form field goes to the test
+      if (ui.palette || ui.overlay || isEditableTarget(e.target)) return;
+      if (e.target instanceof HTMLElement && e.target.dataset.typingInput !== undefined) return;
+      if (e.target instanceof HTMLButtonElement && (e.key === 'Enter' || e.key === ' ')) return;
+      if (handleTypingKey(e)) {
+        e.preventDefault();
+        test.requestFocus();
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, []);
+}
+
+/** Changing the auto-indent setting resets the engine. */
+function useSettingSync() {
+  useEffect(
+    () =>
+      useSettings.subscribe((s, prev) => {
+        if (s.autoIndent !== prev.autoIndent && useTest.getState().phase !== 'running') {
+          useTest.getState().restart();
+        }
+      }),
+    [],
   );
 }
 
-function AppContent() {
-  const { theme } = useThemeContext();
-  const { state } = useGameContext();
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-
-  // Global shortcut for Command Palette (Ctrl+Shift+P, Cmd+Shift+P, F1)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      } else if (e.key === 'F1') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+export default function App() {
+  useWorld();
+  useTicker();
+  useShortcuts();
+  useSettingSync();
+  const phase = useTest((s) => s.phase);
+  const overlay = useUI((s) => s.overlay);
+  const scene = useSettings((s) => s.scene);
 
   return (
-    <div
-      className="h-screen w-screen flex flex-col overflow-hidden font-mono"
-      style={{ backgroundColor: theme.colors.editorBg, color: theme.colors.editorFg }}
-    >
-      <Header onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
-      <div className="flex flex-1 overflow-hidden">
-        <ActivityBar />
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TabBar />
-          <CodeEditor onOpenCommandPalette={() => setIsCommandPaletteOpen(true)} />
-        </div>
+    <MotionConfig reducedMotion={scene === 'calm' ? 'always' : 'user'}>
+      <div className="app" data-phase={phase} data-scene={scene}>
+        <GardenCanvas />
+        <TopBar />
+        <main className="stage">
+          <TypingStage />
+          <Hud />
+        </main>
+        <AnimatePresence>{phase === 'finished' && <ResultScreen key="result" />}</AnimatePresence>
+        <AnimatePresence>
+          {overlay === 'library' && <Library key="library" />}
+          {overlay === 'forest' && <Forest key="forest" />}
+          {overlay === 'settings' && <SettingsSheet key="settings" />}
+        </AnimatePresence>
+        <CommandPalette />
       </div>
-
-      <AnimatePresence>
-        {state.showResults && <ResultsModal />}
-      </AnimatePresence>
-
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
-    </div>
+    </MotionConfig>
   );
 }
